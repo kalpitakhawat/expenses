@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Check, Copy } from 'lucide-react';
 import script from '../../apps-script/Code.gs?raw';
 import { useStore } from '../store';
+
+const scriptPreview = script.split('\n').slice(0, 4).join('\n');
 
 export function SetupPage() {
   const { profiles, connect, startPreview, mode } = useStore();
@@ -15,8 +18,17 @@ export function SetupPage() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState('');
+  const copiedTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimer.current != null) window.clearTimeout(copiedTimer.current);
+    };
+  }, []);
 
   const copyScript = async () => {
+    setCopyError('');
     try {
       await navigator.clipboard.writeText(script);
     } catch {
@@ -29,10 +41,15 @@ export function SetupPage() {
       area.select();
       const ok = document.execCommand('copy');
       area.remove();
-      if (!ok) return;
+      if (!ok) {
+        setCopied(false);
+        setCopyError('Could not copy. Try again from the browser menu.');
+        return;
+      }
     }
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+    if (copiedTimer.current != null) window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(false), 2000);
   };
 
   useEffect(() => {
@@ -144,10 +161,21 @@ export function SetupPage() {
       <ol className="steps">
         <li>Create a Google Sheet. Go to Extensions → Apps Script.</li>
         <li>
-          Replace the sample code with this script. Save.
-          <button className="btn ghost slim" type="button" onClick={() => void copyScript()}>
-            {copied ? 'Copied' : 'Copy script'}
-          </button>
+          Replace the sample code with this script, then save.
+          <div className="script-card">
+            <pre className="script-preview" aria-hidden="true">
+              {scriptPreview}
+            </pre>
+            <button
+              className={copied ? 'btn script-copy is-copied' : 'btn script-copy'}
+              type="button"
+              onClick={() => void copyScript()}
+            >
+              {copied ? <Check size={18} strokeWidth={2.25} /> : <Copy size={18} strokeWidth={2.25} />}
+              {copied ? 'Copied' : 'Copy script'}
+            </button>
+          </div>
+          {copyError && <p className="form-error">{copyError}</p>}
         </li>
         <li>Reload the sheet. Open the Expense tracker menu and choose Set up sheets. Allow access.</li>
         <li>
