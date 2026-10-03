@@ -243,6 +243,7 @@ body.sheet-open { overflow: hidden; }
 
 .form-error { color: var(--danger); font-size: 14px; }
 .steps { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; color: var(--muted); font-size: 14px; }
+.steps .btn { margin-top: 8px; }
 .steps strong, code { color: var(--ink); }
 code { font-size: 13px; }
 

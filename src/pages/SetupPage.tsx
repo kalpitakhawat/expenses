@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import script from '../../apps-script/Code.gs?raw';
 import { useStore } from '../store';
 
 export function SetupPage() {
@@ -13,6 +14,26 @@ export function SetupPage() {
   const [token, setToken] = useState(editing?.token ?? '');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyScript = async () => {
+    try {
+      await navigator.clipboard.writeText(script);
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = script;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.left = '-9999px';
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand('copy');
+      area.remove();
+      if (!ok) return;
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     const profile = profiles.find((item) => item.id === profileId);
@@ -122,7 +143,12 @@ export function SetupPage() {
 
       <ol className="steps">
         <li>Create a Google Sheet. Go to Extensions → Apps Script.</li>
-        <li>Replace the sample code with the file in this project, <code>apps-script/Code.gs</code>. Save.</li>
+        <li>
+          Replace the sample code with this script. Save.
+          <button className="btn ghost slim" type="button" onClick={() => void copyScript()}>
+            {copied ? 'Copied' : 'Copy script'}
+          </button>
+        </li>
         <li>Reload the sheet. Open the Expense tracker menu and choose Set up sheets. Allow access.</li>
         <li>
           Deploy → New deployment → gear icon → Web app. Execute as <strong>Me</strong>. Who has access:{' '}
